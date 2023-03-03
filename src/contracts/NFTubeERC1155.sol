@@ -7,6 +7,8 @@ import "@openzeppelin/contracts-upgradeable/utils/cryptography/EIP712Upgradeable
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155SupplyUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
 
+import "../interfaces/NFTubeERC1155.sol";
+
 // import "hardhat/console.sol";
 
 contract NFTubeERC1155 is ERC1155Upgradeable, ERC1155SupplyUpgradeable, EIP712Upgradeable, OwnableUpgradeable {
@@ -30,6 +32,10 @@ contract NFTubeERC1155 is ERC1155Upgradeable, ERC1155SupplyUpgradeable, EIP712Up
     function burn( address from, uint256 id, uint256 amount) public onlyOwner {
         if (msg.sender != from) revert NotOwner();
         _burn(from, id, amount);
+    }
+
+    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC1155Upgradeable) returns (bool) {
+        return interfaceId == type(IUnicERC1155).interfaceId || super.supportsInterface(interfaceId);
     }
 
     /// @notice Returns a hash of the given NFTVoucher, prepared using EIP712 typed data hashing rules.
