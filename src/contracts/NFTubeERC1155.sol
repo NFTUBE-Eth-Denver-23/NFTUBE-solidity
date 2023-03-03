@@ -7,8 +7,8 @@ import "@openzeppelin/contracts-upgradeable/utils/cryptography/EIP712Upgradeable
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155SupplyUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
 
-import "../interfaces/NFTubeERC1155.sol";
-
+import "../interfaces/INFTubeERC1155.sol";
+import "../interfaces/INFTubeManager.sol";
 // import "hardhat/console.sol";
 
 contract NFTubeERC1155 is ERC1155Upgradeable, ERC1155SupplyUpgradeable, EIP712Upgradeable, OwnableUpgradeable {
@@ -32,6 +32,24 @@ contract NFTubeERC1155 is ERC1155Upgradeable, ERC1155SupplyUpgradeable, EIP712Up
     function burn( address from, uint256 id, uint256 amount) public onlyOwner {
         if (msg.sender != from) revert NotOwner();
         _burn(from, id, amount);
+    }
+
+    function mint( address to, uint256 id, uint256 amount) public payable onlyOwner {
+        _mint(to, id, amount, "");
+
+        //send asset fee to feeReceiver
+        if (msg.value > 0) {
+            INFTubeManager(manager).receiveFee{value: msg.value}();
+        }
+    }
+
+    function mintBatch( address _to, uint256[] calldata _ids, uint256[] calldata _amounts) public payable onlyOwner {
+        _mintBatch(_to, _ids, _amounts, "");
+
+        //send asset fee to feeReceiver
+        if (msg.value > 0) {
+            INFTubeManager(manager).receiveFee{value: msg.value}();
+        }
     }
 
     function supportsInterface(bytes4 interfaceId) public view virtual override(ERC1155Upgradeable) returns (bool) {
