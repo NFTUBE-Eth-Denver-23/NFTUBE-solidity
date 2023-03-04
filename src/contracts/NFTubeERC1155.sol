@@ -11,7 +11,8 @@ import "../interfaces/INFTubeERC1155.sol";
 import "../interfaces/INFTubeManager.sol";
 // import "hardhat/console.sol";
 
-contract NFTubeERC1155 is ERC1155Upgradeable, ERC1155SupplyUpgradeable, EIP712Upgradeable, OwnableUpgradeable {
+contract NFTubeERC1155 is INFTubeERC1155, ERC1155Upgradeable, ERC1155SupplyUpgradeable, EIP712Upgradeable, OwnableUpgradeable {
+
     // Keep track of token balances
     bool public ownerSignatureMintAllowed;
     address public manager;
