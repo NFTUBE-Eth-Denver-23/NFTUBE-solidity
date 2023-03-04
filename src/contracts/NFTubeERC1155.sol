@@ -56,6 +56,48 @@ contract NFTubeERC1155 is ERC1155Upgradeable, ERC1155SupplyUpgradeable, EIP712Up
         return interfaceId == type(INFTubeERC1155).interfaceId || super.supportsInterface(interfaceId);
     }
 
+    //TODO: consider having manager and creator withdraw the fees instead of transfering for the sake of gas fees
+    /// @notice Redeems an NFTVoucher for an actual NFT, creating it in the process.
+    /// @param redeemer The address of the account which will receive the NFT upon success.
+    /// @param voucher A signed NFTVoucher that describes the NFT to be redeemed.
+    function redeem(address redeemer, uint256 tokenId, NFTVoucher calldata voucher) public payable returns (uint256) {
+
+        // make sure that the redeemer is paying enough to cover the buyer's cost
+        if (msg.value < voucher.minPrice) revert InsufficientFunds();
+
+        // make sure the tokenId the user is trying to mint is within the supported range
+        if (voucher.maxTokenId < tokenId) revert TokenNotInRange();
+
+        if (voucher.maxSupply <= totalSupply(tokenId)) revert AboveMaxSupply();
+
+        // make sure signature is valid and get the address of the signer
+        address signer = _verify(voucher);
+
+        // make sure that the signer is authorized to mint NFTs
+        if (owner() != signer) revert InvalidSignature();
+
+        _mint(redeemer, tokenId, 1, "");
+
+        INFTubeManager nftubeManager = INFTubeManager(manager);
+        uint256 redeemFeeInPercentage = nftubeManager.redeemFee();
+        uint256 totalFee = msg.value - voucher.minPrice;
+        //send asset fee + redeem fee to feeReceiver
+        if (redeemFeeInPercentage > 0) {
+            totalFee += (voucher.minPrice * redeemFeeInPercentage / REDEEM_FEE_BASE);
+        }
+
+        if (totalFee > 0) {
+            nftubeManager.receiveFee{value: totalFee}();
+            _transferFee(signer, msg.value - totalFee);
+        } else {
+            _transferFee(signer, msg.value);
+        }
+
+        emit Redeemed(signer, redeemer, tokenId, voucher.minPrice, redeemFeeInPercentage, totalFee);
+
+        return voucher.maxTokenId;
+    }
+
     /// @notice Returns a hash of the given NFTVoucher, prepared using EIP712 typed data hashing rules.
     /// @param voucher An NFTVoucher to hash.
     function _hash(NFTVoucher calldata voucher) internal view returns (bytes32) {
