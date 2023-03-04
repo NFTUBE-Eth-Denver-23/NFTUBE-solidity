@@ -53,7 +53,7 @@ contract NFTubeERC1155 is ERC1155Upgradeable, ERC1155SupplyUpgradeable, EIP712Up
     }
 
     function supportsInterface(bytes4 interfaceId) public view virtual override(ERC1155Upgradeable) returns (bool) {
-        return interfaceId == type(IUnicERC1155).interfaceId || super.supportsInterface(interfaceId);
+        return interfaceId == type(INFTubeERC1155).interfaceId || super.supportsInterface(interfaceId);
     }
 
     /// @notice Returns a hash of the given NFTVoucher, prepared using EIP712 typed data hashing rules.
